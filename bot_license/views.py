@@ -87,3 +87,19 @@ class IssueLicenseView(APIView):
             license = serializer.save(user=request.user)
             return Response(LicenseSerializer(license).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AllProductsView(APIView):
+
+    def get(self, request):
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AllLicensesView(APIView):
+
+    def get(self, request):
+        licenses = BotLicense.objects.all()
+        serializer = LicenseSerializer(licenses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

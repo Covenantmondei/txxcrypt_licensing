@@ -14,8 +14,8 @@ def generate_license_key():
     max_attempts = 100
     for _ in range(max_attempts):
         # Generate the license key
-        segments = [generate_segment() for _ in range(4)]
-        license_key = f"TXCT-{'-'.join(segments)}"
+        segment = generate_segment()
+        license_key = f"TXCT-{segment}"
         
         # Check if this key already exists
         if not BotLicense.objects.filter(license_key=license_key).exists():

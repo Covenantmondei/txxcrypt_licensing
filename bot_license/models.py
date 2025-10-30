@@ -12,7 +12,7 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
 class BotLicense(models.Model):
-    license_key = models.CharField(max_length=20, unique=True)
+    license_key = models.CharField(max_length=9, unique=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     account_id = models.CharField(max_length=25)
     is_active = models.BooleanField(default=True)

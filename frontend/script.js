@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://txxcrypt-license.onrender.com';
 
 // State
 let products = [];

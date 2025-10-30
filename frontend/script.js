@@ -1,8 +1,8 @@
-// Configuration
-const API_BASE_URL = 'http://localhost:8000'; // Change this to your backend URL
+const API_BASE_URL = 'http://localhost:8000';
 
 // State
 let products = [];
+let licensesList = [];
 let stats = {
     totalProducts: 0,
     activeLicenses: 0,
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupForms();
     loadProducts();
+    loadLicenses();
     updateDashboard();
 });
 
@@ -58,6 +59,141 @@ async function loadProducts() {
     } catch (error) {
         console.error('Error loading products:', error);
     }
+}
+
+// Load Licenses
+async function loadLicenses() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/licenses/`);
+        if (response.ok) {
+            licensesList = await response.json();
+            renderLicenses(licensesList);
+            stats.activeLicenses = licensesList.filter(l => l.is_active).length;
+            stats.expiredLicenses = licensesList.filter(l => {
+                if (!l.expires_at) return false;
+                return new Date(l.expires_at) < new Date();
+            }).length;
+            updateDashboard();
+        } else {
+            console.error('Failed to load licenses', await response.text());
+        }
+    } catch (error) {
+        console.error('Error loading licenses:', error);
+    }
+}
+
+// Render Licenses into a table
+function renderLicenses(licenses) {
+    const container = document.getElementById('licenses-list');
+    if (!container) return;
+    if (licenses.length === 0) {
+        container.innerHTML = '<div class="response-item">No licenses found.</div>';
+        return;
+    }
+
+    let html = '<table class="licenses-table"><thead><tr>' +
+        '<th>License Key</th><th>Product</th><th>Account</th><th>Active</th><th>Expires At</th><th>Actions</th>' +
+        '</tr></thead><tbody>';
+
+    for (const l of licenses) {
+        const productName = l.product && (l.product.name || l.product) ? (l.product.name || l.product) : '-';
+        const expiresAt = l.expires_at ? new Date(l.expires_at).toLocaleString() : '-';
+        html += `<tr class="license-row">
+            <td class="license-key">${escapeHtml(l.license_key)}</td>
+            <td>${escapeHtml(productName)}</td>
+            <td>${escapeHtml(l.account_id || '')}</td>
+            <td>${l.is_active ? 'Yes' : 'No'}</td>
+            <td>${escapeHtml(expiresAt)}</td>
+            <td class="licenses-actions">
+                <button class="btn btn-small btn-copy" onclick="copyToClipboard('${escapeJs(l.license_key)}')">Copy</button>
+                <button class="btn btn-small btn-secondary" onclick="viewLicenseDetails('${escapeJs(l.license_key)}')">View</button>
+                <button class="btn btn-small btn-danger" onclick="revokeLicenseConfirm('${escapeJs(l.license_key)}')">Revoke</button>
+            </td>
+        </tr>`;
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // wire up client-side search if search input exists
+    const search = document.getElementById('license-search');
+    if (search) {
+        search.removeEventListener('input', handleLicenseSearch);
+        search.addEventListener('input', handleLicenseSearch);
+    }
+}
+
+// Search handler
+function handleLicenseSearch(e) {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) {
+        renderLicenses(licensesList);
+        return;
+    }
+    const filtered = licensesList.filter(l => {
+        const productName = (l.product && (l.product.name || l.product)) || '';
+        return (l.license_key || '').toLowerCase().includes(q) ||
+               (l.account_id || '').toLowerCase().includes(q) ||
+               (productName || '').toLowerCase().includes(q);
+    });
+    renderLicenses(filtered);
+}
+
+
+// Confirm and revoke
+function revokeLicenseConfirm(license_key) {
+    if (!confirm('Revoke license ' + license_key + '? This cannot be undone.')) return;
+    revokeLicense(license_key);
+}
+
+async function revokeLicense(license_key) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/license/revoke/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ license_key })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showToast('License revoked', 'success');
+            loadLicenses();
+        } else {
+            showResponse('licenses-response', 'error', 'Error Revoking License', data);
+            showToast(data.detail || 'Failed to revoke license', 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+// View license details
+async function viewLicenseDetails(license_key) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/license/${encodeURIComponent(license_key)}/`);
+        const data = await response.json();
+        if (response.ok) {
+            showResponse('licenses-response', 'success', 'License Details', data);
+        } else {
+            showResponse('licenses-response', 'error', 'Error fetching details', data);
+            showToast(data.detail || 'Failed to get license details', 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+// Utility small helpers to avoid XSS in generated HTML
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+function escapeJs(str) {
+    return String(str).replace(/'/g, "\\'");
 }
 
 function updateProductDropdown() {

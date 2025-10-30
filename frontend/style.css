@@ -539,3 +539,46 @@ body {
         width: 100%;
     }
 }
+
+
+.licenses-list {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.licenses-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.licenses-table th,
+.licenses-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.licenses-table thead th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    background-color: transparent;
+}
+
+.license-row:hover {
+    background-color: rgba(255,255,255,0.02);
+}
+
+.licenses-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* keep buttons consistent at small sizes */
+.licenses-actions .btn-small {
+    padding: 6px 10px;
+    font-size: 13px;
+}

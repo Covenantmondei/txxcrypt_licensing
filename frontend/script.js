@@ -13,6 +13,7 @@ let stats = {
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupForms();
+    loadDashboardStats();
     loadProducts();
     loadLicenses();
     updateDashboard();
@@ -45,6 +46,53 @@ function setupForms() {
     document.getElementById('create-license-form').addEventListener('submit', handleCreateLicense);
     document.getElementById('verify-license-form').addEventListener('submit', handleVerifyLicense);
     document.getElementById('revoke-license-form').addEventListener('submit', handleRevokeLicense);
+}
+
+// Load Dashboard Stats
+async function loadDashboardStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/dashboard/`);
+        if (response.ok) {
+            const data = await response.json();
+            stats.totalProducts = data.total_products;
+            stats.activeLicenses = data.active_licenses;
+            stats.expiredLicenses = data.expired_licenses;
+            updateDashboard();
+            renderRecentProducts(data.recent_products);
+        }
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+
+
+// Render recent products on dashboard
+function renderRecentProducts(products) {
+    const container = document.getElementById('recent-products-list');
+    if (!container) return;
+    
+    if (products.length === 0) {
+        container.innerHTML = '<div class="response-item">No products yet.</div>';
+        return;
+    }
+    
+    let html = '<div class="products-grid">';
+    products.forEach(product => {
+        html += `
+            <div class="product-card">
+                <div class="product-header">
+                    <h3>${escapeHtml(product.name)}</h3>
+                    ${product.version ? `<span class="product-version">v${escapeHtml(product.version)}</span>` : ''}
+                </div>
+                ${product.description ? `<p class="product-description">${escapeHtml(product.description)}</p>` : ''}
+                <div class="product-footer">
+                    <span class="product-date">Created: ${new Date(product.created_at).toLocaleDateString()}</span>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 // Load Products
@@ -227,6 +275,7 @@ async function handleCreateProduct(e) {
             showResponse('product-response', 'success', 'Product Created Successfully!', data);
             document.getElementById('create-product-form').reset();
             loadProducts();
+            loadDashboardStats(); 
             showToast('Product created successfully!', 'success');
         } else {
             showResponse('product-response', 'error', 'Error Creating Product', data);

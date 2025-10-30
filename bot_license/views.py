@@ -103,3 +103,26 @@ class AllLicensesView(APIView):
         licenses = BotLicense.objects.all()
         serializer = LicenseSerializer(licenses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DashboardView(APIView):
+
+    def get(self, request):
+        total_products = Product.objects.count()
+        
+        active_licenses = BotLicense.objects.filter(is_active=True).count()
+        
+        now = timezone.now()
+        expired_licenses = BotLicense.objects.filter(
+            expires_at__lt=now
+        ).count()
+        
+        recent_products = Product.objects.order_by('-created_at')[:5]
+        products_data = ProductSerializer(recent_products, many=True).data
+        
+        return Response({
+            'total_products': total_products,
+            'active_licenses': active_licenses,
+            'expired_licenses': expired_licenses,
+            'recent_products': products_data
+        }, status=status.HTTP_200_OK)

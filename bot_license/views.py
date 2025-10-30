@@ -7,6 +7,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import LicenseSerializer, ProductSerializer
 from .models import BotLicense, Product
 from .utils import generate_license_key
+from django.http import JsonResponse
+from django.views import View
 
 
 
@@ -126,3 +128,12 @@ class DashboardView(APIView):
             'expired_licenses': expired_licenses,
             'recent_products': products_data
         }, status=status.HTTP_200_OK)
+    
+
+class HealthCheckView(View):
+    def get(self, request):
+        return JsonResponse({
+            'status': 'healthy',
+            'service': 'TxxCrypt License Manager',
+            'version': '1.0.0'
+        })

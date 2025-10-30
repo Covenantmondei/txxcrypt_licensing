@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateLicenseView, CreateProductView, RevokeLicenseView, VerifyLIcenseView, LicenseDetailsView, AllLicensesView, AllProductsView, DashboardView
+from .views import CreateLicenseView, CreateProductView, RevokeLicenseView, VerifyLIcenseView, LicenseDetailsView, AllLicensesView, AllProductsView, DashboardView, HealthCheckView
 
 urlpatterns = [
     path('product/create/', CreateProductView.as_view(), name='create-product'),
@@ -10,4 +10,5 @@ urlpatterns = [
     path('licenses/', AllLicensesView.as_view(), name='all-licenses'),
     path('products/', AllProductsView.as_view(), name='all-products'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('health/', HealthCheckView.as_view(), name='health-check'),
 ]

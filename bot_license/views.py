@@ -40,7 +40,6 @@ class CreateLicenseView(APIView):
 class VerifyLIcenseView(APIView):
     def post(self, request):
         license_key = request.data.get('license_key')
-        hwid = request.data.get('hwid')
         account = request.data.get('account_id')
 
         try:
@@ -137,3 +136,62 @@ class HealthCheckView(View):
             'service': 'TxxCrypt License Manager',
             'version': '1.0.0'
         })
+
+
+
+class EAValidate(APIView):
+
+    def post (self, request):
+        license_key = request.data.get('license_key')
+        account = request.data.get('account_id')
+
+        if not license_key:
+            return Response({'detail': 'License key is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            license = BotLicense.objects.get(license_key=license_key)
+        except BotLicense.DoesNotExist:
+            return Response({'detail': 'Invalid license key.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if account and license.account_id != account:
+            return Response({'detail': 'Account ID does not match.'}, status=status.HTTP_403_FORBIDDEN)
+
+        if license.expired():
+            return Response({'detail': 'License has expired.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+        return Response({'detail': 'License is valid.'}, status=status.HTTP_200_OK)
+
+
+class ActivateLicense(APIView):
+     
+     def post(self, request):
+         license_key = request.data.get('license_key')
+
+         try:
+             license = BotLicense.objects.get(license_key=license_key)
+         except BotLicense.DoesNotExist:
+             return Response({'detail': 'Invalid license key.'}, status=status.HTTP_404_NOT_FOUND)
+
+         if not license.is_active:
+             license.is_active = True
+             license.save()
+
+         return Response({'detail': 'License has been activated.'}, status=status.HTTP_200_OK)
+
+
+class DeactivateLicense(APIView):
+     
+     def post(self, request):
+         license_key = request.data.get('license_key')
+
+         try:
+             license = BotLicense.objects.get(license_key=license_key)
+         except BotLicense.DoesNotExist:
+             return Response({'detail': 'Invalid license key.'}, status=status.HTTP_404_NOT_FOUND)
+
+         if license.is_active:
+             license.is_active = False
+             license.save()
+
+         return Response({'detail': 'License has been deactivated.'}, status=status.HTTP_200_OK)

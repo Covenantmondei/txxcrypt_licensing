@@ -303,7 +303,7 @@ async function handleCreateLicense(e) {
     
     try {
         const payload = {
-            product: parseInt(product),
+            product_id: parseInt(product),
             account_id
         };
         

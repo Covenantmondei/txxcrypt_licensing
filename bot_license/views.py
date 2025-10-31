@@ -23,14 +23,7 @@ class CreateProductView(APIView):
 
 class CreateLicenseView(APIView):
     def post(self, request):
-        # Generate a unique license key
-        license_key = generate_license_key()
-        
-        # Add the generated license key to the request data
-        data = request.data.copy()
-        data['license_key'] = license_key
-        
-        serializer = LicenseSerializer(data=data)
+        serializer = LicenseSerializer(data=request.data)
         if serializer.is_valid():
             license = serializer.save()
             return Response(LicenseSerializer(license).data, status=status.HTTP_201_CREATED)

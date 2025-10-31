@@ -2,13 +2,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.utils import timezone
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import LicenseSerializer, ProductSerializer
 from .models import BotLicense, Product
 from .utils import generate_license_key
 from django.http import JsonResponse
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 
 
@@ -138,31 +138,31 @@ class HealthCheckView(View):
         })
 
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class EAValidate(APIView):
 
     def post (self, request):
-        license_key = request.data.get('license_key')
-        account = request.data.get('account_id')
+        license_key = request.data.get('license_key') or request.POST.get('license_key')
+        account = request.data.get('account_id') or request.POST.get('account_id')
 
         if not license_key:
-            return Response({'detail': 'License key is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'valid': 'License key is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             license = BotLicense.objects.get(license_key=license_key)
         except BotLicense.DoesNotExist:
-            return Response({'detail': 'Invalid license key.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'valid': 'Invalid license key.'}, status=status.HTTP_404_NOT_FOUND)
         
         if account and license.account_id != account:
-            return Response({'detail': 'Account ID does not match.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'valid': 'Account ID does not match.'}, status=status.HTTP_403_FORBIDDEN)
 
         if license.expired():
-            return Response({'detail': 'License has expired.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'valid': 'License has expired.'}, status=status.HTTP_403_FORBIDDEN)
 
 
-        return Response({'detail': 'License is valid.'}, status=status.HTTP_200_OK)
+        return Response({'valid': 'License is valid.'}, status=status.HTTP_200_OK)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ActivateLicense(APIView):
      
      def post(self, request):
@@ -179,7 +179,7 @@ class ActivateLicense(APIView):
 
          return Response({'detail': 'License has been activated.'}, status=status.HTTP_200_OK)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class DeactivateLicense(APIView):
      
      def post(self, request):

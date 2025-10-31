@@ -17,7 +17,7 @@ class BotLicense(models.Model):
     account_id = models.CharField(max_length=25)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     def expired(self):
         return self.expires_at and self.expires_at < timezone.now()
